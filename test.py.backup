@@ -1,0 +1,309 @@
+import unittest
+import pieceset as chset
+from chessengine import Board,Piece,Square,logging
+from time import time
+from pdb import set_trace
+
+class BoardTest(unittest.TestCase):
+  def testRowCount(self):
+    """Board class should create 8 rows."""
+    board = Board(chset.debug)
+    self.assertEqual( len(board.square), 8 )
+ 
+  def testSquareCount(self):
+    """Board class should create 8 squares on each row."""
+
+    board = Board(chset.debug)
+    for row in board.square:
+      self.assertEqual(len(row),8)
+  
+  def testSquares(self):
+    """Squares should be setted same as values in chset"""
+    board = Board(chset.debug)
+    for obj in chset.debug:
+      square = board.square[ obj["x"] ][obj["y"]]
+      self.assertEqual( square.piece.symbol, ( obj["color"], obj["value"] ) )
+
+class PieceTest(unittest.TestCase):
+  def testPawn1Piece(self):
+    """Movement-Relation-Threat test of pawn pieces on pawn1 map."""
+    board = Board(chset.pawn1)
+    pawn1 = board.square[0][1].piece # white 0x1
+    pawn2 = board.square[1][1].piece # white 1x1
+    pawn3 = board.square[2][2].piece # white 2x1
+    pawn4 = board.square[1][2].piece # black 1x2
+    
+    self.assertEqual(pawn1.movement,[ board.square[0][2],board.square[0][3], board.square[1][2] ])
+    self.assertEqual(pawn2.movement,[])
+    self.assertEqual(pawn3.movement,[ board.square[2][3] ])
+    self.assertEqual(pawn4.movement,[ board.square[0][1] ])
+    
+    self.assertEqual(pawn1.relation,[ board.square[0][2],board.square[0][3], board.square[1][2] ])
+    self.assertEqual(pawn2.relation,[ board.square[1][2], board.square[0][2], board.square[2][2] ])
+    self.assertEqual(pawn3.relation,[ board.square[2][3], board.square[1][3], board.square[3][3]  ])
+    self.assertEqual(pawn4.relation,[ board.square[1][1], board.square[0][1], board.square[2][1] ])
+    
+    self.assertEqual(pawn1.threat,[ board.square[1][2] ])
+    self.assertEqual(pawn2.threat,[ board.square[0][2], board.square[2][2] ])
+    self.assertEqual(pawn3.threat,[ board.square[1][3], board.square[3][3]  ])
+    self.assertEqual(pawn4.threat,[ board.square[0][1], board.square[2][1] ])
+    
+    
+  def testPawn1Square(self):
+    """Movement-Listener-Threat test of squares on pawn1 map."""
+    board = Board(chset.pawn1)
+    pawn1 = board.square[0][1].piece # white 0x1
+    pawn2 = board.square[1][1].piece # white 1x1
+    pawn3 = board.square[2][2].piece # white 2x1
+    pawn4 = board.square[1][2].piece # black 1x2
+    
+    self.assertEqual( board.square[0][1].move, [ pawn4 ] )
+    self.assertEqual( board.square[0][2].move, [ pawn1 ] )
+    self.assertEqual( board.square[0][3].move, [ pawn1 ] )
+    self.assertEqual( board.square[1][2].move, [ pawn1 ] )
+    self.assertEqual( board.square[2][3].move, [ pawn3 ] )
+
+    self.assertEqual( board.square[0][3].listener, [ pawn1 ] )
+    self.assertEqual( board.square[0][2].listener, [ pawn1, pawn2 ] )
+    self.assertEqual( board.square[1][3].listener, [ pawn3 ] )
+    self.assertEqual( board.square[1][2].listener, [ pawn1, pawn2 ] )
+    self.assertEqual( board.square[2][3].listener, [ pawn3 ] )
+    
+    self.assertEqual( board.square[0][1].threat, [ pawn4 ] )
+    self.assertEqual( board.square[0][2].threat, [ pawn2 ] )
+    self.assertEqual( board.square[2][1].threat, [ pawn4 ] )
+    self.assertEqual( board.square[1][3].threat, [ pawn3 ] )
+    self.assertEqual( board.square[3][3].threat, [ pawn3 ] )
+    
+  def testKnight1Piece(self):
+    """Movement-Listener-Threat test of pieces on knight1 map."""
+    logging.info("<KNIGH1 TEST>")
+    board = Board(chset.knight1)
+    pawn1 = board.square[2][2].piece # white pawn
+    pawn2 = board.square[3][1].piece # black pawn
+    knight1 = board.square[1][0].piece # white knight
+    knight2 = board.square[3][3].piece # black knight
+
+    logging.info("Knight1 Movement data; %s"%(str(['%ix%i'%(square.x,square.y) for square in knight1.movement])))
+    
+    self.assertEqual(knight1.movement,[ board.square[3][1],board.square[0][2] ])
+    self.assertEqual(knight2.movement,[ board.square[4][1],board.square[4][5], board.square[5][4], board.square[5][2], board.square[2][1], board.square[2][5], board.square[1][4], board.square[1][2] ])
+    
+    logging.info("</KNIGH1 TEST>")
+    
+  def testBishop1Piece(self):
+    """Movement-Listener-Threat test of pieces on bishop1 map."""
+    logging.info("<BISHOP1 TEST>")
+    board = Board(chset.bishop1)
+    pawn1 = board.square[1][4].piece # white pawn
+    pawn2 = board.square[5][2].piece # black pawn
+    bishop1 = board.square[2][5].piece # white bishop
+    bishop2 = board.square[2][3].piece # black bishop
+
+    logging.info("Bishop1 Movement data; %s"%(str(['%ix%i'%(square.x,square.y) for square in bishop1.movement])))
+    logging.info("Bishop2 Movement data; %s"%(str(['%ix%i'%(square.x,square.y) for square in bishop2.movement])))
+    
+    self.assertEqual(bishop1.movement,[ board.square[3][6], board.square[4][7], board.square[3][4], board.square[4][3], board.square[5][2], board.square[1][6], board.square[0][7] ])
+    self.assertEqual(bishop2.movement,[ board.square[3][4], board.square[4][5], board.square[5][6], board.square[6][7], board.square[1][2], board.square[0][1], board.square[3][2], board.square[4][1], board.square[5][0], board.square[1][4] ])
+    
+    logging.info("</BISHOP1 TEST>")
+    
+  def testRook1Piece(self):
+    """Movement-Listener-Threat test of pieces on rook1 map."""
+    logging.info("<ROOK1 TEST>")
+    board = Board(chset.rook1)
+    rook1 = board.square[1][6].piece
+
+    logging.info("Rook1 Movement data; %s"%(str(['%ix%i'%(square.x,square.y) for square in rook1.movement])))
+    
+    self.assertEqual(rook1.movement,[ board.square[2][6], board.square[3][6], board.square[4][6], board.square[5][6], board.square[6][6], board.square[7][6], board.square[0][6], board.square[1][7], board.square[1][5], board.square[1][4], board.square[1][3], board.square[1][2], board.square[1][1], board.square[1][0] ])
+    
+    logging.info("</ROOK1 TEST IS ENDED>")
+
+  def testRook2Piece(self):
+    """Movement-Listener-Threat test of pieces on rook1 map."""
+    logging.info("<ROOK2 TEST>")
+    board = Board(chset.rook2)
+    rook2 = board.square[3][3].piece
+    king1 = board.square[2][2].piece
+    queen1 = board.square[5][5].piece
+    
+    board.time = int(time()*10000)
+    king1.update()
+    
+    logging.info("Rook1 Movement data; %s"%(str(['%ix%i'%(square.x,square.y) for square in rook2.movement])))
+    
+    logging.info("</ROOK2 TEST IS ENDED>")
+    
+    self.assertEqual(rook2.movement,[])
+  
+  def testRook3Piece(self):
+    """Movement-Listener-Threat test of pieces on rook1 map."""
+    logging.info("<ROOK3 TEST>")
+    board = Board(chset.rook3)
+    rook1 = board.square[0][0].piece
+    rook2 = board.square[7][0].piece
+    king = board.square[4][0].piece
+    bishop = board.square[0][7].piece
+    
+    logging.info("King Movement data; %s"%(str(["board.square[%i][%i]"%(square.x,square.y) for square in king.movement])))
+    
+    logging.info("</ROOK3 TEST IS ENDED>")
+    
+    self.assertEqual(king.movement,[board.square[5][1], board.square[5][0],board.square[4][1], board.square[3][1], board.square[3][0], board.square[6][0], board.square[2][0] ])
+    bishop.move( board.square[6][2] )
+    logging.info("King Movement data; %s"%(str(["board.square[%i][%i]"%(square.x,square.y) for square in king.movement])))
+    self.assertEqual(king.movement,[ board.square[5][0],board.square[4][1], board.square[3][1], board.square[3][0] ])
+    bishop.move( board.square[7][2] )
+    logging.info("King Movement data; %s"%(str(["board.square[%i][%i]"%(square.x,square.y) for square in king.movement])))
+    self.assertEqual(king.movement,[board.square[5][1], board.square[4][1], board.square[3][1], board.square[3][0], board.square[2][0] ])
+    
+    bishop.move( board.square[7][1] )
+    logging.info("King Movement data; %s"%(str(["board.square[%i][%i]"%(square.x,square.y) for square in king.movement])))
+    self.assertEqual(king.movement,[board.square[5][1],board.square[5][0], board.square[4][1], board.square[3][1], board.square[3][0], board.square[2][0]])
+
+
+
+  def testQueen1Piece(self):
+    """Movement-Listener-Threat test of pieces on rook1 map."""
+    logging.info("<QUEEN1 TEST IS STARTING>")
+    board = Board(chset.queen1)
+    queen1 = board.square[3][3].piece
+    logging.info("Queen1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in queen1.movement])))
+    self.assertEqual(queen1.movement,[ board.square[4][4], board.square[5][5], board.square[6][6], board.square[7][7], board.square[2][2], board.square[1][1], board.square[0][0], board.square[4][2], board.square[5][1], board.square[6][0], board.square[2][4], board.square[1][5], board.square[0][6], board.square[4][3], board.square[5][3], board.square[6][3], board.square[7][3], board.square[2][3], board.square[1][3], board.square[0][3], board.square[3][4], board.square[3][5], board.square[3][6], board.square[3][7], board.square[3][2], board.square[3][1], board.square[3][0] ])
+    logging.info("</QUEEN1 TEST>")
+ 
+  def testKing2Piece(self):
+    pass
+    """Movement-Listener-Threat test of pieces on king2 map."""
+    logging.info("<KING2 TEST>")
+    board = Board(chset.king2)
+    king1 = board.square[6][0].piece
+    rook1 = board.square[4][0].piece
+    rook2 = board.square[1][0].piece
+    bishop1 = board.square[1][5].piece
+    pawn1 = board.square[2][3].piece
+    bishop2 = board.square[0][2].piece
+    
+    board.time = int(time()*10000)
+    
+    king1.update()
+    
+    logging.info("King1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in king1.movement])))
+    logging.info("Rook1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in rook1.movement])))
+    logging.info("Pawn1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in pawn1.movement])))
+    logging.info("Bishop1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in bishop2.movement])))
+    
+    self.assertEqual(king1.movement,[board.square[7][1], board.square[7][0], board.square[6][1], board.square[5][0]])
+    self.assertEqual(rook1.movement,[])
+    self.assertEqual(pawn1.movement,[ board.square[2][4] ])
+    self.assertEqual(bishop2.movement,[ board.square[2][4] ])
+    
+    logging.info("</KING2 TEST>")
+ 
+  def testKing3Piece(self):
+    """Movement-Listener-Threat test of pieces on king3 map."""
+    logging.info("<KING3 TEST>")
+    board = Board(chset.king3)
+    king1 = board.square[4][0].piece
+    king2 = board.square[4][7].piece
+    logging.info("king1 time: %i",king1.time)
+    board.time = int(time()*10000)
+    king1.update()
+    king2.update()
+    
+    logging.info("King1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in king1.movement])))
+    logging.info("King2 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in king2.movement])))
+    
+    self.assertEqual(king1.movement,[board.square[5][1], board.square[5][0], board.square[4][1], board.square[3][1], board.square[3][0], board.square[6][0], board.square[2][0]])
+    self.assertEqual(king2.movement,[board.square[5][6], board.square[5][7], board.square[4][6], board.square[3][7], board.square[3][6], board.square[6][7], board.square[2][7]])
+    
+    logging.info("</KING3 TEST>")
+
+  def testMate1(self):
+    logging.info("<MATE1 TEST>")
+    board = Board(chset.debug2)
+    queen1 =  board.square[5][0].piece
+    queen2 =  board.square[5][7].piece
+    rook1 = board.square[4][0].piece
+    rook2 = board.square[4][7].piece
+    bishop1 = board.square[2][7].piece
+    bishop2 = board.square[3][7].piece
+    knight2 = board.square[1][7].piece
+    
+    
+    logging.info("queen1 and rook2 gonna be moved.")
+    queen1.move(board.square[2][3])
+    rook2.move(board.square[4][5])
+
+    logging.info("Knight2 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in knight2.movement])))
+    logging.info("Bishop1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in bishop1.movement])))
+    logging.info("Bishop2 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in bishop2.movement])))
+    logging.info("Rook1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in rook1.movement])))
+    logging.info("Queen1 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in queen1.movement])))
+    logging.info("Queen2 Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in queen2.movement])))
+    
+    self.assertEqual(rook1.movement, [board.square[5][0], board.square[4][1], board.square[4][2], board.square[4][3], board.square[4][4], board.square[4][5]])
+    self.assertEqual(knight2.movement,[ board.square[2][5], board.square[3][6], board.square[0][5] ])
+    self.assertEqual(bishop2.movement,[ 
+    board.square[2][6], board.square[1][5], board.square[0][4], board.square[4][6], board.square[5][5], board.square[6][4], board.square[7][3] ])
+    
+    logging.info("</MATE1 TEST>")
+    
+  def testMate3(self):
+    logging.info("<MATE3 TEST>")
+    board = Board(chset.debug)
+    queen = board.square[4][0].piece
+    king = board.square[5][7].piece
+    rook = board.square[3][0].piece
+    
+    rook.move(board.square[3][7])
+    queen.move(board.square[4][7])
+    king.move(board.square[6][6])
+    queen.move(board.square[5][6])
+
+    self.assertEqual(king.movement,[ board.square[5][6] ])
+    self.assertEqual(board.winner,-1)
+    logging.info("</MATE3 TEST>")
+    
+  def testKing5Piece(self):
+    logging.info("<KING5 TEST>")
+    board = Board(chset.king5)
+    rb1 = board.square[2][3].piece
+    rb2 = board.square[4][4].piece
+    rb3 = board.square[6][3].piece
+    bw = board.square[5][3].piece
+    rw = board.square[3][3].piece
+    king = board.square[4][3].piece
+    
+    logging.info("King Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in king.movement])))
+    logging.info("Bishop Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in bw.movement])))
+    logging.info("Rook Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in rw.movement])))
+    
+    self.assertEqual(board.winner,-1)
+    self.assertEqual(bw.movement,[])
+    self.assertEqual(king.movement,[ board.square[5][2], board.square[4][4], board.square[3][2]  ])
+    self.assertEqual(rw.movement,[ ])
+    
+    logging.info("</KING5 TEST>")
+
+  def testKing6Piece(self):
+    logging.info("<KING6 TEST>")
+    board = Board(chset.king6)
+    rb1 = board.square[2][3].piece
+    rb3 = board.square[6][3].piece
+    bw = board.square[5][3].piece
+    rw = board.square[3][3].piece
+    king = board.square[4][3].piece
+    
+    logging.info("Bishop Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in bw.movement])))
+    logging.info("Rook Movement data; %s"%(str(['board.square[%i][%i],'%(square.x,square.y) for square in rw.movement])))
+    
+    self.assertEqual(board.winner,-1)
+    self.assertEqual(bw.movement,[])
+    self.assertEqual(rw.movement,[ board.square[2][3] ])
+    
+    logging.info("</KING6 TEST>")
+
+if __name__ == "__main__":
+  unittest.main()
